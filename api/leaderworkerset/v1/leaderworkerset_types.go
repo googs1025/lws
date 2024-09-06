@@ -293,6 +293,9 @@ const (
 //+kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.hpaPodSelector
 //+kubebuilder:resource:shortName={lws}
+//+kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.readyReplicas/.spec.replicas",description="Ratio of ready replicas to desired replicas."
+//+kubebuilder:printcolumn:name="UP-TO-DATE",type="string",JSONPath=".status.updatedReplicas",description="Number of groups that have been updated (ready or not)."
+//+kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type=date,description="Age is the time LeaderWorkerSet was created."
 
 // LeaderWorkerSet is the Schema for the leaderworkersets API
 type LeaderWorkerSet struct {

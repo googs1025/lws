@@ -16,7 +16,20 @@ spec:
     singular: leaderworkerset
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Ratio of ready replicas to desired replicas.
+      jsonPath: .status.readyReplicas/.spec.replicas
+      name: Ready
+      type: string
+    - description: Number of groups that have been updated (ready or not).
+      jsonPath: .status.updatedReplicas
+      name: UP-TO-DATE
+      type: string
+    - description: Age is the time LeaderWorkerSet was created.
+      jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: LeaderWorkerSet is the Schema for the leaderworkersets API
