@@ -3,6 +3,16 @@ kind: LeaderWorkerSet
 metadata:
   name: leaderworkerset-sample
 spec:
+  scalePolicy:
+    minReplicas: 1
+    maxReplicas: 3
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
   replicas: 3
   leaderWorkerTemplate:
     size: 4

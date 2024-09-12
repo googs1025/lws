@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -119,6 +120,11 @@ type LeaderWorkerSetSpec struct {
 	// +kubebuilder:validation:Enum={LeaderCreated,LeaderReady}
 	// +optional
 	StartupPolicy StartupPolicyType `json:"startupPolicy"`
+
+	// ScalePolicy if set, configures how to scale the JobSet.
+	// +optional
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
+	ScalePolicy *ScalePolicy `json:"scalePolicy,omitempty"`
 }
 
 // Template of the leader/worker pods, the group will include at least one leader pod.
@@ -247,6 +253,27 @@ const (
 	LeaderCreatedStartupPolicy StartupPolicyType = "LeaderCreated"
 )
 
+type ScalePolicy struct {
+	// MinReplicas is the lower limit for the number of replicas to which the autoscaler
+	// can scale down.  It defaults to 1.
+	// +optional
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas is the upper limit for the number of replicas to which the autoscaler can scale up.
+	// It cannot be less that minReplicas.
+	// +optional
+	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
+	// Metrics contains the specifications which are used to calculate the
+	// desired replica count (the maximum replica count across all metrics will
+	// be used).  The desired replica count is calculated with multiplying the
+	// ratio between the target value and the current value by the current
+	// number of pods. Ergo, metrics used must decrease as the pod count is
+	// increased, and vice-versa.  See the individual metric source types for
+	// more information about how each type of metric must respond.
+	// If not set, the HPA will not be created.
+	// +optional
+	Metrics []autoscalingv2.MetricSpec `json:"metrics,omitempty"`
+}
+
 // LeaderWorkerSetStatus defines the observed state of LeaderWorkerSet
 type LeaderWorkerSetStatus struct {
 	// Conditions track the condition of the leaderworkerset.
@@ -293,9 +320,6 @@ const (
 //+kubebuilder:subresource:status
 //+kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.hpaPodSelector
 //+kubebuilder:resource:shortName={lws}
-//+kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.readyReplicas/.spec.replicas",description="Ratio of ready replicas to desired replicas."
-//+kubebuilder:printcolumn:name="UP-TO-DATE",type="string",JSONPath=".status.updatedReplicas",description="Number of groups that have been updated (ready or not)."
-//+kubebuilder:printcolumn:name="Age",JSONPath=".metadata.creationTimestamp",type=date,description="Age is the time LeaderWorkerSet was created."
 
 // LeaderWorkerSet is the Schema for the leaderworkersets API
 type LeaderWorkerSet struct {
