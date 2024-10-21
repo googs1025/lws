@@ -5,6 +5,10 @@ metadata:
 spec:
   replicas: 3
   leaderWorkerTemplate:
+    replicaSpecificNodeSelector: test
+    replicaSpecificToleration:
+      - key: test
+        effect: NoSchedule
     leaderTemplate:
       spec:
         containers:

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"k8s.io/utils/ptr"
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -265,6 +266,7 @@ func constructWorkerStatefulSetApplyConfiguration(leaderPod corev1.Pod, lws lead
 	if err != nil {
 		return nil, err
 	}
+	var tolerationApplyConfigurations []coreapplyv1.TolerationApplyConfiguration
 	var podTemplateApplyConfiguration coreapplyv1.PodTemplateSpecApplyConfiguration
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj, &podTemplateApplyConfiguration)
 	if err != nil {
@@ -275,12 +277,27 @@ func constructWorkerStatefulSetApplyConfiguration(leaderPod corev1.Pod, lws lead
 		leaderworkerset.SetNameLabelKey:         lws.Name,
 		leaderworkerset.GroupUniqueHashLabelKey: leaderPod.Labels[leaderworkerset.GroupUniqueHashLabelKey],
 	}
+	for _, v := range lws.Spec.LeaderWorkerTemplate.ReplicaSpecificNodeSelector {
+		if podTemplateApplyConfiguration.Spec.NodeSelector == nil {
+			podTemplateApplyConfiguration.Spec.NodeSelector = map[string]string{}
+		}
+		podTemplateApplyConfiguration.Spec.NodeSelector[v] = leaderPod.Name
+	}
 	labelMap := map[string]string{
 		leaderworkerset.GroupIndexLabelKey:      leaderPod.Labels[leaderworkerset.GroupIndexLabelKey],
 		leaderworkerset.SetNameLabelKey:         lws.Name,
 		leaderworkerset.GroupUniqueHashLabelKey: leaderPod.Labels[leaderworkerset.GroupUniqueHashLabelKey],
 		leaderworkerset.TemplateRevisionHashKey: leaderPod.Labels[leaderworkerset.TemplateRevisionHashKey],
 	}
+	for _, v := range lws.Spec.LeaderWorkerTemplate.ReplicaSpecificToleration {
+		aa := coreapplyv1.TolerationApplyConfiguration{
+			Key:   ptr.To("group"),
+			Value: &leaderPod.Name,
+		}
+		aa.WithEffect(corev1.TaintEffect(v.Effect)).WithOperator("Equal")
+		tolerationApplyConfigurations = append(tolerationApplyConfigurations, aa)
+	}
+	podTemplateApplyConfiguration.Spec.Tolerations = append(podTemplateApplyConfiguration.Spec.Tolerations, tolerationApplyConfigurations...)
 
 	podTemplateApplyConfiguration.WithLabels(labelMap)
 	podAnnotations := make(map[string]string)

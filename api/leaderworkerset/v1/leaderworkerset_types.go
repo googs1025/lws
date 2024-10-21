@@ -163,6 +163,15 @@ type LeaderWorkerTemplate struct {
 	// in each replica.
 	// +optional
 	SubGroupPolicy *SubGroupPolicy `json:"subGroupPolicy,omitempty"`
+
+	ReplicaSpecificNodeSelector []string `json:"replicaSpecificNodeSelector"`
+
+	ReplicaSpecificToleration []ReplicaSpecificToleration `json:"replicaSpecificToleration"`
+}
+
+type ReplicaSpecificToleration struct {
+	Key    string `json:"key"`
+	Effect string `json:"effect"`
 }
 
 // RolloutStrategy defines the strategy that the leaderWorkerSet controller
